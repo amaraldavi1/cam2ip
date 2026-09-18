@@ -29,7 +29,11 @@ func (s *Socket) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close(websocket.StatusNormalClosure, "")
 
-	ctx := r.Context()
+	// Binary clients receive raw JPEG frames; text clients receive base64 for backward compatibility.
+	binary := r.URL.Query().Get("binary") == "1"
+
+	// CloseRead handles control frames and cancels ctx when the client goes away.
+	ctx := conn.CloseRead(r.Context())
 
 	ch := s.stream.subscribe()
 	defer s.stream.unsubscribe(ch)
@@ -40,9 +44,14 @@ func (s *Socket) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 
 		case frame := <-ch:
-			b64 := image.EncodeToString(frame)
+			var err error
+			if binary {
+				err = conn.Write(ctx, websocket.MessageBinary, frame)
+			} else {
+				err = conn.Write(ctx, websocket.MessageText, []byte(image.EncodeToString(frame)))
+			}
 
-			if err := conn.Write(ctx, websocket.MessageText, []byte(b64)); err != nil {
+			if err != nil {
 				return
 			}
 		}

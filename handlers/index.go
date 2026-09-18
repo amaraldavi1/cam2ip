@@ -2,10 +2,14 @@
 package handlers
 
 import (
+	_ "embed"
 	"net/http"
 )
 
-// Index handler.
+//go:embed ui/index.html
+var indexHTML []byte
+
+// Index handler serves the web UI.
 type Index struct {
 }
 
@@ -16,19 +20,20 @@ func NewIndex() *Index {
 
 // ServeHTTP handles requests on incoming connections.
 func (i *Index) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+
+		return
+	}
+
 	if r.Method != "GET" && r.Method != "HEAD" {
 		http.Error(w, "405 Method Not Allowed", http.StatusMethodNotAllowed)
 
 		return
 	}
 
-	_, _ = w.Write([]byte(`<html>
-                        <head><title>cam2ip</title></head>
-                        <body>
-                        <h1>cam2ip</h1>
-                        <p><a href='/html'>html</a></p>
-                        <p><a href='/jpeg'>jpeg</a></p>
-                        <p><a href='/mjpeg'>mjpeg</a></p>
-                        </body>
-                        </html>`))
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache")
+
+	_, _ = w.Write(indexHTML)
 }

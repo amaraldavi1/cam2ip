@@ -6,6 +6,7 @@ package camera
 import (
 	"fmt"
 	"image"
+	"runtime"
 	"sync"
 	"unsafe"
 
@@ -40,6 +41,10 @@ func New(opts Options) (c *Camera, err error) {
 
 	c = &Camera{opts: opts}
 	c.cond = sync.NewCond(&c.mu)
+
+	// An autorelease pool must be drained on the thread that created it.
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 
 	pool := objc.ID(objc.GetClass("NSAutoreleasePool")).Send(selAlloc).Send(selInit)
 	defer pool.Send(selDrain)
@@ -110,6 +115,10 @@ func Devices() ([]DeviceInfo, error) {
 	if err := loadFrameworks(); err != nil {
 		return nil, err
 	}
+
+	// An autorelease pool must be drained on the thread that created it.
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 
 	pool := objc.ID(objc.GetClass("NSAutoreleasePool")).Send(selAlloc).Send(selInit)
 	defer pool.Send(selDrain)
