@@ -162,6 +162,8 @@ func main() {
 		return camera.New(opts)
 	}
 
+	srv.DeviceName = deviceName(srv.Index)
+
 	if srv.Lazy {
 		stderr("%s %s [lazy] listening on %s\n", name, version, srv.Bind)
 	} else {
@@ -178,9 +180,11 @@ func main() {
 		}
 
 		info := cam.Info()
+		srv.Format = info.Format
+
 		desc := fmt.Sprintf("%dx%d %s", info.Width, info.Height, info.Format)
-		if dn := deviceName(srv.Index); dn != "" {
-			desc = dn + ", " + desc
+		if srv.DeviceName != "" {
+			desc = srv.DeviceName + ", " + desc
 		}
 
 		stderr("%s %s [%s] listening on %s\n", name, version, desc, srv.Bind)

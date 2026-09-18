@@ -17,9 +17,11 @@ type Server struct {
 	Name    string
 	Version string
 
-	Index  int
-	Device string
-	Delay  int
+	Index      int
+	Device     string
+	DeviceName string
+	Format     string
+	Delay      int
 
 	Width  float64
 	Height float64
@@ -63,6 +65,20 @@ func (s *Server) ListenAndServe() error {
 	mux.Handle("/jpeg", newAuthHandler(handlers.NewJPEG(stream), basic))
 	mux.Handle("/mjpeg", newAuthHandler(handlers.NewMJPEG(stream), basic))
 	mux.Handle("/socket", newAuthHandler(handlers.NewSocket(stream), basic))
+
+	info := handlers.Info{
+		Name:    s.Name,
+		Version: s.Version,
+		Device:  s.DeviceName,
+		Format:  s.Format,
+		Width:   int(s.Width),
+		Height:  int(s.Height),
+		Quality: s.Quality,
+		Delay:   s.Delay,
+		Lazy:    s.Lazy,
+		Auth:    basic != nil,
+	}
+	mux.Handle("/api/info", newAuthHandler(handlers.NewInfo(info, stream), basic))
 
 	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

@@ -126,6 +126,14 @@ func (s *Stream) subscribe() chan []byte {
 	return ch
 }
 
+// Viewers returns the number of connected subscribers.
+func (s *Stream) Viewers() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return len(s.subs)
+}
+
 // unsubscribe removes a subscriber.
 func (s *Stream) unsubscribe(ch chan []byte) {
 	s.mu.Lock()
